@@ -1,2 +1,1 @@
-# a-neural-network-for-atomic-charge-calculation
-# by Keras library 
+# a-neural-network-for-atomic-charge-calculation-by-Keras-library
