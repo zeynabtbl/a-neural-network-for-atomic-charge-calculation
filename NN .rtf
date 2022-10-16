@@ -1,182 +1,172 @@
-{\rtf1\mac\ansicpg10000\cocoartf2638
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+import numpy as np 
+import matplotlib.pyplot as plt
+import sklearn.model_selection
+import pandas as pd
+import tensorflow as tf
+from sklearn.metrics import mean_squared_error
+from sklearn import metrics
+from tensorflow.keras.optimizers import Adam,SGD,RMSprop,Adadelta,Adagrad,Adamax,Nadam,Ftrl
+from keras.models import Sequential
+from keras.layers import Dense,BatchNormalization
+from sklearn.metrics import max_error
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from keras.callbacks import EarlyStopping
 
-\f0\fs24 \cf0 import numpy as np \
-import matplotlib.pyplot as plt\
-import sklearn.model_selection\
-import pandas as pd\
-import tensorflow as tf\
-from sklearn.metrics import mean_squared_error\
-from sklearn import metrics\
-from tensorflow.keras.optimizers import Adam,SGD,RMSprop,Adadelta,Adagrad,Adamax,Nadam,Ftrl\
-from keras.models import Sequential\
-from keras.layers import Dense,BatchNormalization\
-from sklearn.metrics import max_error\
-from sklearn.preprocessing import StandardScaler\
-from sklearn.model_selection import train_test_split\
-from keras.callbacks import EarlyStopping\
+print("[INFO] loading data...")
+X= pd.read_csv("/Users/zeynab_tbl/Documents/MATLAB/python/fingers_all.csv",sep=',',header=None)
+Y= pd.read_csv("/Users/zeynab_tbl/Documents/MATLAB/python/labels_all.csv",sep=',',header=None)
+
+print("[INFO] scalling data...")
+X=StandardScaler().fit_transform(X)
+Y=StandardScaler().fit_transform(Y)
 \
-print("[INFO] loading data...")\
-X= pd.read_csv("/Users/zeynab_tbl/Documents/MATLAB/python/fingers_all.csv",sep=',',header=None)\
-Y= pd.read_csv("/Users/zeynab_tbl/Documents/MATLAB/python/labels_all.csv",sep=',',header=None)\
-\
-print("[INFO] scalling data...")\
-X=StandardScaler().fit_transform(X)\
-Y=StandardScaler().fit_transform(Y)\
-\
-print("[INFO] splitting data to train and validation...")\
-X_train,X_val,Y_train,Y_val=train_test_split(X,Y,test_size=0.3,random_state=123,shuffle=True)\
-\
-\
-def sequential_model(X_train,Y_train,x_test,y_test,itr_num,epoch,batch_size,num_neuron,num_layers,opt,act):\
-\
-    \
-    searchresultdata= pd.DataFrame(columns=['Epoch','Batch_size','Number_of_neurons','Number_of_layers',\
-                                            'Input_dimension','Activation_function','Optimizer','MSE test','MSE train',\
-                                            'test loss','train loss','maximum test error','maximum train error','Accuracy','validation loss RMSE'])\
-\
-    lay=1\
-    \
-    #create model\
-    model=Sequential()\
-    model.add(Dense(num_neuron,input_dim=inp_dim,activation=act,kernel_initializer='random_uniform',bias_initializer='zeros'))\
-      \
-    for i in range(1, num_layers):\
-        model.add(Dense(num_neuron, activation=act, kernel_initializer='random_uniform'))      \
-        \
-    \
-    model.add(Dense(1,activation="linear"))\
-    \
-    #visualize model\
-    model.summary()\
-    #plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=True)\
-    \
-    \
-    #compile model\
-    model.compile(loss="mean_squared_error", optimizer=opt,metrics=['mae'])\
-    \
-    #earlystopping model\
-    es=EarlyStopping(monitor='loss', mode='min', verbose=0, patience=5, restore_best_weights=True)\
-    \
-\
-    #fit the keras model on the dataset\
-    history=model.fit(X_train[:,0:inp_dim],Y_train,epochs=epoch,batch_size=batch_size,validation_split=0.25)\
-    train_loss=history.history['loss']\
-    test_loss=history.history['val_loss']\
-    \
-    #predict the keras model\
-    y_pred_test=model.predict(x_test[:,0:inp_dim])\
-    y_pred_train=model.predict(X_train[:,0:inp_dim])\
-    \
-    #evaluate the keras model \
-    accuracy=model.evaluate(x_test[:,0:inp_dim],y_test)\
-    maxerr_train=max_error(Y_train,y_pred_train)\
-    maxerr_test=max_error(y_test,y_pred_test)\
-    \
-    #visualize results\
-    fig=plt.figure()\
-    plt.plot(train_loss,label="Training loss")\
-    plt.plot(test_loss,label="Validation loss")\
-    plt.xlabel("EPOCH",fontsize=15)\
-    plt.ylabel("MSE",fontsize=15)\
-    plt.legend()\
-    plt.title("Training vs Validation Loss",fontsize=15)\
-    plt.savefig("/Users/zeynab_tbl/Documents/MATLAB/python/plots/training_vs_validation_loss\{\},\{\},\{\},\{\},\{\},\{\},\{\}.jpg".format(epoch,batch_size,num_neuron,num_layers,opt,act,inp_dim),dpi=300)\
-    plt.show()\
-\
-    score=metrics.mean_squared_error(y_pred_test,y_test)\
-    print ("MSE_test:\{\}" .format(score))\
-    print ("RMSE_test:\{\}".format(np.sqrt(score))) \
-    print ("maximum_test_error:\{\}" .format(maxerr_test))\
-               \
-    print()\
-    \
-    score2=metrics.mean_squared_error(y_pred_train,Y_train)\
-    print ("MSE_train:\{\}" .format(score2))\
-    print ("RMSE_train:\{\}".format(np.sqrt(score2)))\
-    print ("maximum_train_error:\{\}" .format(maxerr_train))\
-\
-    fig2=plt.figure()           \
-    plt.subplots(figsize=(10,5))\
-    plt.subplot(1,2,1)\
-    plt.scatter(y_test,y_pred_test, c='red', s=5)\
-    lims = [-1, 1]\
-    plt.plot(lims, lims, lw=1, color='#0000FF')\
-    plt.ticklabel_format(useOffset=False, style='plain')\
-    plt.xticks(fontsize=12)\
-    plt.yticks(fontsize=12)\
-    plt.xlim(lims)\
-    plt.ylim(lims)\
-    plt.xlabel('Real charge', fontsize=15)\
-    plt.ylabel('Predicted charge', fontsize=15)\
-    #plt.savefig("/Users/zeynab_tbl/Documents/MATLAB/python/plots/real_vs_predicted_test\{\}.jpg".format(itr_num))\
-               \
-    fig3=plt.figure()\
-    plt.subplot(1,2,2)\
-    plt.scatter(Y_train,y_pred_train,  c='red', s=5)\
-    plt.plot(lims, lims, lw=1, color='#0000FF')\
-    plt.ticklabel_format(useOffset=False, style='plain')\
-    plt.xticks(fontsize=12)\
-    plt.yticks(fontsize=12)\
-    plt.xlim(lims)\
-    plt.ylim(lims)\
-    plt.xlabel('Real charge', fontsize=15)\
-    plt.ylabel('Predicted charge', fontsize=15)\
-    plt.savefig("/Users/zeynab_tbl/Documents/MATLAB/python/plots/real_vs_predicted_train\{\}.jpg".format(itr_num),dpi=500)\
-\
-           \
-    plt.tight_layout()\
-    plt.show()\
-    plt.show()\
-               \
-    save_model(epoch,batch_size,num_neuron,num_layer,opt,act,inp_dim,score,score2,accuracy,test_loss,train_loss)\
-    \
-    searchresultdata=searchresultdata.append(pd.DataFrame(data=[[epoch,batch_size,num_neuron,num_layers,inp_dim,act,\
-                                                                 opt,score,score2,np.mean(test_loss),np.mean(train_loss),\
-                                                                 maxerr_test,maxerr_train,accuracy[1]*100,\
-                                                                 np.sqrt(np.mean(history.history['val_loss']))]],\
-                                                                     columns=['Epoch','Batch_size','Number_of_neurons',\
-                                                                              'Number_of_layers','Input_dimension','Activation_function',\
-                                                                              'Optimizer','MSE test','MSE train','test loss','train loss',\
-                                                                              'maximum test error','maximum train error','Accuracy',\
-                                                                              'validation loss RMSE']))\
-    print(epoch,batch_size,num_neuron,num_layers,opt,act,inp_dim,score,np.sqrt(np.mean(history.history['val_loss'])))\
-    \
-    return searchresultdata\
-    \
-    \
-    \
-epochs=[5,10,20,50]\
-batch_size=[32,64,128,264,512]\
-width=[10,20,30,40,50,60,70,80,90,100]\
-depth=[1,2,3,4,5,6,7,8,9,10]\
-optimizer=['adagrad','adamax','Ftrl','Nadam','adadelta','Adam','SGD','RMSprop']\
-activation=['exponential','elu','selu','tanh','softsign','softplus','relu']\
-itr_num=1    \
-    \
-for epoch in (epochs):\
-    \
-    for batch_size in (batch_size):\
-        \
-`       for num_neuron in (width):\
-                        \
-            for opt in (optimizer):\
-                    \
-              for act in (activation):\
-                \
-                for num_layers in (depth):\
-                            \
-                    \
+print("[INFO] splitting data to train and validation...")
+X_train,X_val,Y_train,Y_val=train_test_split(X,Y,test_size=0.3,random_state=123,shuffle=True)
+
+
+def sequential_model(X_train,Y_train,x_test,y_test,itr_num,epoch,batch_size,num_neuron,num_layers,opt,act):
+
+    
+    searchresultdata= pd.DataFrame(columns=['Epoch','Batch_size','Number_of_neurons','Number_of_layers',
+                                            'Input_dimension','Activation_function','Optimizer','MSE test','MSE train',
+                                            'test loss','train loss','maximum test error','maximum train error','Accuracy','validation loss RMSE'])
+
+    lay=1
+    
+    #create model
+    model=Sequential()
+    model.add(Dense(num_neuron,input_dim=inp_dim,activation=act,kernel_initializer='random_uniform',bias_initializer='zeros'))
+      
+    for i in range(1, num_layers):
+        model.add(Dense(num_neuron, activation=act, kernel_initializer='random_uniform'))      
+        
+    
+    model.add(Dense(1,activation="linear"))
+    
+    #visualize model
+    model.summary()
+    #plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=True)
+    
+    
+    #compile model
+    model.compile(loss="mean_squared_error", optimizer=opt,metrics=['mae'])
+    
+    #earlystopping model
+    es=EarlyStopping(monitor='loss', mode='min', verbose=0, patience=5, restore_best_weights=True)
+    
+
+    #fit the keras model on the dataset
+    history=model.fit(X_train[:,0:inp_dim],Y_train,epochs=epoch,batch_size=batch_size,validation_split=0.25)
+    train_loss=history.history['loss']
+    test_loss=history.history['val_loss']
+    
+    #predict the keras model
+    y_pred_test=model.predict(x_test[:,0:inp_dim])
+    y_pred_train=model.predict(X_train[:,0:inp_dim])
+    
+    #evaluate the keras model 
+    accuracy=model.evaluate(x_test[:,0:inp_dim],y_test)
+    maxerr_train=max_error(Y_train,y_pred_train)
+    maxerr_test=max_error(y_test,y_pred_test)
+    
+    #visualize results
+    fig=plt.figure()
+    plt.plot(train_loss,label="Training loss")
+    plt.plot(test_loss,label="Validation loss")
+    plt.xlabel("EPOCH",fontsize=15)
+    plt.ylabel("MSE",fontsize=15)
+    plt.legend()
+    plt.title("Training vs Validation Loss",fontsize=15)
+    plt.savefig("/Users/zeynab_tbl/Documents/MATLAB/python/plots/training_vs_validation_loss\{\},\{\},\{\},\{\},\{\},\{\},\{\}.jpg".format(epoch,batch_size,num_neuron,num_layers,opt,act,inp_dim),dpi=300)
+    plt.show()
+
+    score=metrics.mean_squared_error(y_pred_test,y_test)
+    print ("MSE_test:\{\}" .format(score))
+    print ("RMSE_test:\{\}".format(np.sqrt(score))) 
+    print ("maximum_test_error:\{\}" .format(maxerr_test))
+               
+    print()
+    
+    score2=metrics.mean_squared_error(y_pred_train,Y_train)
+    print ("MSE_train:\{\}" .format(score2))
+    print ("RMSE_train:\{\}".format(np.sqrt(score2)))
+    print ("maximum_train_error:\{\}" .format(maxerr_train))
+
+    fig2=plt.figure()          
+    plt.subplots(figsize=(10,5))
+    plt.subplot(1,2,1)
+    plt.scatter(y_test,y_pred_test, c='red', s=5)
+    lims = [-1, 1]
+    plt.plot(lims, lims, lw=1, color='#0000FF')
+    plt.ticklabel_format(useOffset=False, style='plain')
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.xlim(lims)
+    plt.ylim(lims)
+    plt.xlabel('Real charge', fontsize=15)
+    plt.ylabel('Predicted charge', fontsize=15)
+    #plt.savefig("/Users/zeynab_tbl/Documents/MATLAB/python/plots/real_vs_predicted_test\{\}.jpg".format(itr_num))
+
+    fig3=plt.figure()
+    plt.subplot(1,2,2)
+    plt.scatter(Y_train,y_pred_train,  c='red', s=5)
+    plt.plot(lims, lims, lw=1, color='#0000FF')
+    plt.ticklabel_format(useOffset=False, style='plain')
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.xlim(lims)
+    plt.ylim(lims)
+    plt.xlabel('Real charge', fontsize=15)
+    plt.ylabel('Predicted charge', fontsize=15)
+    plt.savefig("/Users/zeynab_tbl/Documents/MATLAB/python/plots/real_vs_predicted_train\{\}.jpg".format(itr_num),dpi=500)
+
+    plt.tight_layout()
+    plt.show()
+    plt.show()
+             
+    save_model(epoch,batch_size,num_neuron,num_layer,opt,act,inp_dim,score,score2,accuracy,test_loss,train_loss)
+    
+    searchresultdata=searchresultdata.append(pd.DataFrame(data=[[epoch,batch_size,num_neuron,num_layers,inp_dim,act,
+                                                                 opt,score,score2,np.mean(test_loss),np.mean(train_loss),
+                                                                 maxerr_test,maxerr_train,accuracy[1]*100,
+                                                                 np.sqrt(np.mean(history.history['val_loss']))]],
+                                                                     columns=['Epoch','Batch_size','Number_of_neurons',
+                                                                              'Number_of_layers','Input_dimension','Activation_function',
+                                                                              'Optimizer','MSE test','MSE train','test loss','train loss',
+                                                                              'maximum test error','maximum train error','Accuracy',
+                                                                              'validation loss RMSE']))
+    print(epoch,batch_size,num_neuron,num_layers,opt,act,inp_dim,score,np.sqrt(np.mean(history.history['val_loss'])))
+    
+    return searchresultdata
+   
+   
+epochs=[5,10,20,50]
+batch_size=[32,64,128,264,512]
+width=[10,20,30,40,50,60,70,80,90,100]
+depth=[1,2,3,4,5,6,7,8,9,10]
+optimizer=['adagrad','adamax','Ftrl','Nadam','adadelta','Adam','SGD','RMSprop']
+activation=['exponential','elu','selu','tanh','softsign','softplus','relu']
+itr_num=1    
+ 
+for epoch in (epochs):
+
+    for batch_size in (batch_size):
+
+`       for num_neuron in (width):
+                    
+            for opt in (optimizer):
+                    
+              for act in (activation):
+               
+                for num_layers in (depth):
+                       
+                       
                     searchresultdata=sequential_model(X_train=X_train,Y_train=Y_train,x_test=X_val,y_test=Y_val,itr_num=itr_num,epoch=epoch,\
                                                         batch_size=batch_size,num_neuron=num_neuron,num_layers=num_layers,opt=str(opt),act=act,inp_dim=inp_dim)\
-                    \
-         \
+                  
+                  
                     searchresultdata.to_csv(r'/Users/zeynab_tbl/Documents/MATLAB/python/NeuralNetworkModel.txt',header=True,index=True ,sep='\\t', mode='a')\
-              \
-                \
-                \
+              
+              
 f.close()}
